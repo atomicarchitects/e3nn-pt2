@@ -1,7 +1,6 @@
 import torch
 
-from e3x_torch import so3
-from e3x_torch import nn
+from e3nn_pt2 import so3, nn
 
 from typing import Optional
 

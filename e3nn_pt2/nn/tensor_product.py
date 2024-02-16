@@ -1,7 +1,7 @@
 import torch
 
 from e3nn import io, o3
-from e3x_torch import so3
+from e3nn_pt2 import so3
 
 from typing import Tuple, List, Any, Sequence, Union, Optional
 import jaxtyping

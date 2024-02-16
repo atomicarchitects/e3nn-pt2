@@ -5,6 +5,8 @@ from typing import Optional, Tuple
 import torch
 from e3nn import io, o3
 
+from .common import _so3_clebsch_gordan
+
 
 class Irreps(o3.Irreps):
 
@@ -68,7 +70,7 @@ def clebsch_gordan(max_degree1: int,
       for _l2 in range(max_degree2+1):
           _l3_common = []
           for _l3 in range(max_degree3+1):
-              _l3_common.append(o3._so3_clebsch_gordan(_l1, _l2, _l3))
+              _l3_common.append(_so3_clebsch_gordan(_l1, _l2, _l3))
           _l2_common.append(torch.cat(_l3_common, axis=2))
       _l1_common.append(torch.cat(_l2_common, axis=1))
   return torch.cat(_l1_common, axis=0).to(dtype)

@@ -2,11 +2,14 @@ import torch
 
 
 from e3nn import io, o3
-from e3x_torch import so3
+from e3nn_pt2 import so3
 
 from typing import Tuple, List, Any, Sequence, Union, Optional
 import jaxtyping
 torch.set_float32_matmul_precision('high')
+
+Float = jaxtyping.Float
+Array = torch.Tensor
 
 # Linear layer
 

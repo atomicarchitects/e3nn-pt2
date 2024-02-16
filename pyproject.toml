@@ -1,0 +1,44 @@
+[project]
+name = "e3nn-pt2"
+description = "Your friendly neighborhood e3nn powered by a e3x memory backend with first class support for PyTorch 2.0"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [{name = "The e3nn-pt2 Authors", email="mitkotak0305@gmail.com"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
+]
+keywords = [
+    "equivariance", "equivariant", "invariance", "invariant",
+    "E(3)", "SE(3)", "O(3)", "SO(3)",
+    "Euclidean", "Orthogonal", "group",
+    "translation", "translational",
+    "rotation", "rotational",
+    "roto-translation", "roto-translational",
+    "reflection",
+    "neural network", "machine learning", "deep learning",
+]
+
+# pip dependencies of the project
+
+dependencies = [
+  "e3nn",
+  "torch",
+  "jaxtyping"
+]
+
+
+# This is set automatically by flit using `e3x.__version__`
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://github.com/atomicarchitects/e3nn-pt2"
+repository = "https://github.com/atomicarchitects/e3nn-pt2"
+# Other: `documentation`, `changelog`
+
+[build-system]
+requires = ["flit_core >=3.5,<4"]
+build-backend = "flit_core.buildapi"
