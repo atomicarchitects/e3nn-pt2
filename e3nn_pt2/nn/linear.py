@@ -73,8 +73,8 @@ class Linear(torch.nn.Module):
         self.ells = [irrep.l for _, irrep in irreps_in]
         self.layers = {}
         if self.pseudo_tensor:  # Has pseudotensors.
-            self.dense_e = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias, device, '+')
-            self.dense_o = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, False, device, '-')
+            self.dense_e = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias, device)
+            self.dense_o = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, False, device)
         
         else:
             self.dense = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias, device)
