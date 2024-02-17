@@ -30,7 +30,7 @@ mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps, device='cuda')
 
 # Run the model :)
 
-mod(x_irreps, y_irreps)
+mod(x, y)
 
 ```
 ## Acknowledgement
