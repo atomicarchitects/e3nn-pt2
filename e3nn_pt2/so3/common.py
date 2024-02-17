@@ -123,6 +123,9 @@ def _so3_clebsch_gordan(l1: int, l2: int, l3: int) -> torch.Tensor:
     assert torch.all(torch.abs(torch.imag(C)) < 1e-5)
     C = torch.real(C)
 
+    if torch.norm(C) == 0:
+        return C
+
     # normalization
     C = C / torch.norm(C)
     return C
