@@ -30,8 +30,8 @@ class TensorProduct(torch.nn.Module):
         
     @torch.compile(fullgraph=True)
     def forward(self, x1, x2):
-        if (not self.pseudo_tensor_in1) or (self.pseudo_tensor_in2):
-            return torch.einsum(f'...lf, ...m{self.channel_dim}, lmn->...nf', x1, x2, self.cg)
+        if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
+            return torch.einsum(f'...lf, ...m{self.channel_dim}, lmn-> ...nf', x1, x2, self.cg)
 
         def _couple_slices(i: int, j: int):
             return torch.einsum(
@@ -42,8 +42,10 @@ class TensorProduct(torch.nn.Module):
             )
 
         even_parity_output= odd_parity_output = None
-        eee = _couple_slices(0, 0) # even + even -> even
-        even_parity_output += eee
+        
+        if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
+            eee = _couple_slices(0, 0) # even + even -> even
+            even_parity_output += eee
         if (self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
             oeo = _couple_slices(1, 0)  # odd + even -> odd
             even_parity_output += oeo
