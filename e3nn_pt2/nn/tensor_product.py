@@ -15,8 +15,8 @@ class TensorProduct(torch.nn.Module):
         super().__init__()
         self.irreps_out = so3.Irreps(o3.FullTensorProduct(irreps_in1, irreps_in2).irreps_out.__str__())
         self.cg = so3.clebsch_gordan(irreps_in1.lmax, irreps_in2.lmax, self.irreps_out.lmax).to(device=device)
-        self.pseudo_tensor_in1 = (irreps_in1.parity_dim == 2)
-        self.pseudo_tensor_in2 = (irreps_in2.parity_dim == 2)
+        self.pseudo_tensor_in1 = irreps_in1.parity_dim == 2
+        self.pseudo_tensor_in2 = irreps_in2.parity_dim == 2
         
         # Check if number of channels is same for the 2 inputs
         # else use the channel axis from the first input
@@ -40,18 +40,17 @@ class TensorProduct(torch.nn.Module):
                 x2[..., j, :, :],
                 self.cg,
             )
-
-        even_parity_output= odd_parity_output = None
         
+        even_parity_output = odd_parity_output = None
         if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
             eee = _couple_slices(0, 0) # even + even -> even
-            even_parity_output += eee
+            even_parity_output = eee
         if (self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
             oeo = _couple_slices(1, 0)  # odd + even -> odd
-            even_parity_output += oeo
+            odd_parity_output = oeo
         if (self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
             ooe = _couple_slices(1, 1)  # odd + odd -> even
-            odd_parity_output += ooe
+            even_parity_output += ooe
         if (not self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
             eoo = _couple_slices(0, 1)  # even + odd -> odd
             odd_parity_output += eoo
