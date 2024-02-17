@@ -15,7 +15,8 @@ class TensorProduct(torch.nn.Module):
         super().__init__()
         self.irreps_out = so3.Irreps(o3.FullTensorProduct(irreps_in1, irreps_in2).irreps_out.__str__())
         self.cg = so3.clebsch_gordan(irreps_in1.lmax, irreps_in2.lmax, self.irreps_out.lmax).to(device=device)
-        self.pseudo_tensor = ((irreps_in1.parity_dim == 2) or (irreps_in2.parity_dim == 2))
+        self.pseudo_tensor_in1 = (irreps_in1.parity_dim == 2)
+        self.pseudo_tensor_in2 = (irreps_in2.parity_dim == 2)
         
         # Check if number of channels is same for the 2 inputs
         # else use the channel axis from the first input
@@ -29,7 +30,7 @@ class TensorProduct(torch.nn.Module):
         
     @torch.compile(fullgraph=True)
     def forward(self, x1, x2):
-        if not self.pseudo_tensor:
+        if (not self.pseudo_tensor_in1) or (self.pseudo_tensor_in2):
             return torch.einsum(f'...lf, ...m{self.channel_dim}, lmn->...nf', x1, x2, self.cg)
 
         def _couple_slices(i: int, j: int):
@@ -40,10 +41,18 @@ class TensorProduct(torch.nn.Module):
                 self.cg,
             )
 
+        even_parity_output= odd_parity_output = None
         eee = _couple_slices(0, 0) # even + even -> even
-        ooe = _couple_slices(1, 1)  # odd + odd -> even
-        eoo = _couple_slices(0, 1)  # even + odd -> odd
-        oeo = _couple_slices(1, 0)  # odd + even -> odd
+        even_parity_output += eee
+        if (self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
+            oeo = _couple_slices(1, 0)  # odd + even -> odd
+            even_parity_output += oeo
+        if (self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
+            ooe = _couple_slices(1, 1)  # odd + odd -> even
+            odd_parity_output += ooe
+        if (not self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
+            eoo = _couple_slices(0, 1)  # even + odd -> odd
+            odd_parity_output += eoo
 
         # Combine same parities and return stacked features.
-        return torch.stack((eee + ooe, eoo + oeo), axis=-3)
+        return torch.stack((even_parity_output, odd_parity_output), axis=-3)

@@ -24,14 +24,12 @@ class Irreps(o3.Irreps):
     
     def randn(self,
             leading_shape: Optional[Tuple[int, ...]] = (1,),
-            pseudo_scalar: Optional[bool] = False):
+            ):
         r"""Random tensor
         
         Parameters
         ----------
         *leading_shape: batch shape which defaults to 1
-        *pseduo_scalar: True if you want an extra dimension for Tensor Product
-                        defaults to False
         
         Returns
         ---------
@@ -40,9 +38,9 @@ class Irreps(o3.Irreps):
         
         """
         parity_dim_mapper = {-1: 2, 1:1}
-        padded_irreps_tensor = torch.zeros(leading_shape + (2 if pseudo_scalar else self.parity_dim, (self.lmax+1)**2, self.mul_dim))
+        padded_irreps_tensor = torch.zeros(leading_shape + (self.parity_dim, (self.lmax+1)**2, self.mul_dim))
         for _, irrep in self:
-            parity_shape = parity_dim_mapper[-1 if pseudo_scalar else irrep.p]
+            parity_shape = parity_dim_mapper[irrep.p]
             padded_irreps_tensor[:,
                             parity_shape-1:parity_shape,
                             irrep.l**2: (irrep.l+1)**2,
