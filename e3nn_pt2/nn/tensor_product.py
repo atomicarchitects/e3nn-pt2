@@ -47,7 +47,7 @@ class TensorProduct(torch.nn.Module):
             even_parity_output = eee
         if (self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
             oeo = _couple_slices(1, 0)  # odd + even -> odd
-            odd_parity_output = oeo
+            odd_parity_output += oeo
         if (self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
             ooe = _couple_slices(1, 1)  # odd + odd -> even
             even_parity_output += ooe
