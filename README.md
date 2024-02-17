@@ -19,6 +19,12 @@ import e3nn_pt2
 x_irreps = e3nn_pt2.so3.Irreps("32x0e + 32x1e + 32x2e")
 y_irreps = e3nn_pt2.so3.Irreps("0e + 1o + 2e")
 
+
+# Initialize arrays and move them to the GPU
+
+x = x_irreps.randn().to(device='cuda')
+y = y_irreps.randn().to(device='cuda')
+
 # Initialize TP + Linear module with the option to specify the device
 mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps, device='cuda')
 
