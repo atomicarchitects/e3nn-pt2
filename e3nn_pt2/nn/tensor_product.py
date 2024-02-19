@@ -48,12 +48,12 @@ class TensorProduct(torch.nn.Module):
                 )
             
             if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
-                self.output[:, 0:1, :, :] += _couple_slices(0, 0) # even + even -> even
+                self.output[:, 0, :, :] += _couple_slices(0, 0) # even + even -> even
             if (self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
-                self.output[:, 1:2, :, :] += _couple_slices(1, 0)  # odd + even -> odd
+                self.output[:, 1, :, :] += _couple_slices(1, 0)  # odd + even -> odd
             if (self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
-                self.output[:, 0:1, :, :] += _couple_slices(1, 1)  # odd + odd -> even
+                self.output[:, 0, :, :] += _couple_slices(1, 1)  # odd + odd -> even
             if (not self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
-                self.output[:, 1:2, :, :] += _couple_slices(0, 1)  # even + odd -> odd
+                self.output[:, 1, :, :] += _couple_slices(0, 1)  # even + odd -> odd
 
         return self.output
