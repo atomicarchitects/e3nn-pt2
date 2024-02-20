@@ -31,8 +31,21 @@ mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps, device='cuda')
 # Run the model :)
 
 mod(x, y)
-
 ```
+
+## Runtime comparision with other packages in the e3nn-verse
+
+Benchmarking done on a RTX A5500
+
+<div class="container">
+      <div class="image">
+      <img src="examples/benchmarking/benchmark_tplinear_batch_100_all_even.png"  style="width:100%"/>
+      </div> 
+      <div class="image">
+       <img src="examples/benchmarking/benchmark_tplinear_batch_100.png"  style="width:100%"/>
+      </div> 
+</div>
+
 ## Acknowledgement
 
 - e3nn
