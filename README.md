@@ -9,7 +9,7 @@ Your friendly neighborhood [e3nn](https://github.com/e3nn/e3nn/) powered by a [e
 > python -m pip install .
 ```
 
-## Amuze Bouche
+## Amuze Bouche (credit Mario Geiger)
 
 ```python
 import e3nn_pt2
