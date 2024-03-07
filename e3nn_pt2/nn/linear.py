@@ -1,35 +1,36 @@
 import torch
-
+from torch import nn
 
 from e3nn import io, o3
 from e3nn_pt2 import so3
 
 from typing import Tuple, List, Any, Sequence, Union, Optional
 import jaxtyping
-torch.set_float32_matmul_precision('high')
+
+torch.set_float32_matmul_precision("high")
 
 Float = jaxtyping.Float
 Array = torch.Tensor
 
 # Linear layer
 
+
 def _make_dense_for_each_degree(
     ells: List[int],
     in_features: int,
     out_features: int,
-    use_bias: bool, 
-    device: str
-    ) -> List[torch.nn.Linear]:
+    use_bias: bool,
+) -> List[torch.nn.Linear]:
     """Helper function for generating Modules."""
-    dense = torch.nn.ModuleDict({})
+    dense = nn.ModuleDict({})
     for l in ells:
-        dense[f"{l}"] = torch.nn.Linear(
-                            in_features=in_features,
-                            out_features=out_features,
-                            bias=use_bias).to(device=device)
+        dense[f"{l}"] = nn.Linear(
+            in_features=in_features, out_features=out_features, bias=use_bias
+        )
     return dense
 
-class Linear(torch.nn.Module):
+
+class Linear(nn.Module):
     r"""A linear transformation applied over the last dimension of the input.
 
     The transformation can be written as
@@ -60,12 +61,12 @@ class Linear(torch.nn.Module):
         use_bias: Whether to add a bias to the scalar channel of the output.
     """
 
-    def __init__(self,
-                irreps_in: so3.Irreps,
-                irreps_out: so3.Irreps,
-                device: str = "cpu",
-                use_bias: Optional[int] = False
-                ):
+    def __init__(
+        self,
+        irreps_in: so3.Irreps,
+        irreps_out: so3.Irreps,
+        use_bias: Optional[int] = False,
+    ):
         super().__init__()
         self.pseudo_tensor = (irreps_in.parity_dim == 2) or (irreps_out.parity_dim == 2)
         self.lmax = irreps_in.lmax
@@ -73,23 +74,28 @@ class Linear(torch.nn.Module):
         self.ells = [irrep.l for _, irrep in irreps_in]
         self.layers = {}
         if self.pseudo_tensor:  # Has pseudotensors.
-            self.dense_e = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias, device)
-            self.dense_o = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, False, device)
-        
+            self.dense_e = _make_dense_for_each_degree(
+                self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias
+            )
+            self.dense_o = _make_dense_for_each_degree(
+                self.ells, irreps_in.mul_dim, irreps_out.mul_dim, False
+            )
+
         else:
-            self.dense = _make_dense_for_each_degree(self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias, device)
-    
-    
-    @torch.compile(fullgraph=True)
+            self.dense = _make_dense_for_each_degree(
+                self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias
+            )
+
+    @torch.compile
     def forward(
         self,
         inputs: Union[
-            Float[Array, '... 1 (max_degree+1)**2 in_features'],
-            Float[Array, '... 2 (max_degree+1)**2 in_features'],
+            Float[Array, "... 1 (max_degree+1)**2 in_features"],
+            Float[Array, "... 2 (max_degree+1)**2 in_features"],
         ],
     ) -> Union[
-        Float[Array, '... 1 (max_degree+1)**2 out_features'],
-        Float[Array, '... 2 (max_degree+1)**2 out_features'],
+        Float[Array, "... 1 (max_degree+1)**2 out_features"],
+        Float[Array, "... 2 (max_degree+1)**2 out_features"],
     ]:
         """Applies a linear transformation to the inputs along the last dimension.
 
@@ -99,25 +105,39 @@ class Linear(torch.nn.Module):
         Returns:
         The transformed input.
         """
-    
+
         if self.pseudo_tensor:
             return torch.stack(
                 [
                     # Even parity (tensors).
                     torch.cat(
                         [
-                            self.dense_e[f"{l}"](inputs[..., 0, l**2 : (l + 1) ** 2, :]) if l in self.ells
-                            else inputs[..., 0, l**2 : (l + 1) ** 2, :].expand(inputs.shape[:-1]+(self.output_mul,))
-                            for l in range(self.lmax+1)
+                            (
+                                self.dense_e[f"{l}"](
+                                    inputs[..., 0, l**2 : (l + 1) ** 2, :]
+                                )
+                                if l in self.ells
+                                else inputs[..., 0, l**2 : (l + 1) ** 2, :].expand(
+                                    inputs.shape[:-1] + (self.output_mul,)
+                                )
+                            )
+                            for l in range(self.lmax + 1)
                         ],
                         axis=-2,
                     ),
                     # Odd parity (pseudotensors).
                     torch.cat(
                         [
-                            self.dense_o[f"{l}"](inputs[..., 1, l**2 : (l + 1) ** 2, :]) if l in self.ells
-                            else inputs[..., 1, l**2 : (l + 1) ** 2, :].expand(inputs.shape[:-1]+(self.output_mul,))
-                            for l in range(self.lmax+1)
+                            (
+                                self.dense_o[f"{l}"](
+                                    inputs[..., 1, l**2 : (l + 1) ** 2, :]
+                                )
+                                if l in self.ells
+                                else inputs[..., 1, l**2 : (l + 1) ** 2, :].expand(
+                                    inputs.shape[:-1] + (self.output_mul,)
+                                )
+                            )
+                            for l in range(self.lmax + 1)
                         ],
                         axis=-2,
                     ),
@@ -127,9 +147,14 @@ class Linear(torch.nn.Module):
         else:  # Has no pseudotensors.
             return torch.cat(
                 [
-                    self.dense[f"{l}"](inputs[..., l**2 : (l + 1) ** 2, :]) if l in self.ells
-                    else inputs[..., l**2 : (l + 1) ** 2, :].expand(inputs.shape[:-1]+(self.output_mul,))
-                    for l in range(self.lmax+1)
+                    (
+                        self.dense[f"{l}"](inputs[..., l**2 : (l + 1) ** 2, :])
+                        if l in self.ells
+                        else inputs[..., l**2 : (l + 1) ** 2, :].expand(
+                            inputs.shape[:-1] + (self.output_mul,)
+                        )
+                    )
+                    for l in range(self.lmax + 1)
                 ],
                 axis=-2,
             )
