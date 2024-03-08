@@ -26,16 +26,14 @@ x = x_irreps.randn().to(device='cuda')
 y = y_irreps.randn().to(device='cuda')
 
 # Initialize TP + Linear module with the option to specify the device
-mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps, device='cuda')
+mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps).to(device='cuda')
 
 # Run the model :)
 
-mod(x, y)
+out = mod(x, y)
 ```
 
 ## Runtime comparision with other packages in the e3nn-verse
-
-Benchmarking done on a RTX A5500
 
 <div class="container">
       <div class="image">

@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import numpy as np
 
 from e3nn import io, o3
 from e3nn_pt2 import so3
@@ -11,7 +12,6 @@ torch.set_float32_matmul_precision("high")
 
 
 class TensorProduct(nn.Module):
-
     def __init__(self, irreps_in1, irreps_in2, batch=1):
         super().__init__()
         self.irreps_out = so3.Irreps(
@@ -22,6 +22,15 @@ class TensorProduct(nn.Module):
         )
         self.pseudo_tensor_in1 = irreps_in1.parity_dim == 2
         self.pseudo_tensor_in2 = irreps_in2.parity_dim == 2
+        self.parity_masks = nn.ParameterDict(
+            {
+                "even": torch.Tensor([1, 0]).reshape(2, 1),
+                "odd": torch.Tensor([0, 1]).reshape(2, 1),
+            }
+        )
+
+        # TODO: Add named tensors
+        # TODO Simplify this logic
 
         # Check if number of channels is same for the 2 inputs
         # else use the channel axis from the first input
@@ -33,49 +42,34 @@ class TensorProduct(nn.Module):
         else:
             self.channel_dim = "g"  # f x g -> f
 
-        self.output = nn.Parameter(
-            torch.empty(
-                (
-                    batch,
-                    2 if (self.pseudo_tensor_in1 or self.pseudo_tensor_in2) else 1,
-                    (self.irreps_out.lmax + 1) ** 2,
-                    irreps_in1.mul_dim,
-                )
-            )
-        )
-
     @torch.compile
     def forward(self, x1, x2):
         if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
-            self.output[:, 0:1, :, :] = torch.einsum(
-                f"...lf, ...m{self.channel_dim}, lmn-> ...nf", x1, x2, self.cg
+            return torch.einsum(
+                f"...lf, ...m{self.channel_dim}, lmn -> ...nf",
+                torch.einsum("bplf, pa -> balf", x1, self.parity_masks["even"]),
+                torch.einsum("bplf, pa -> balf", x2, self.parity_masks["even"]),
+                self.cg,
             )
 
         else:
 
-            def _couple_slices(i: int, j: int):
+            def _couple_slices(x1_mask_idx: int, x2_mask_idx: int):
                 return torch.einsum(
                     f"...lf, ...m{self.channel_dim}, lmn -> ...nf",
-                    x1[..., i, :, :],
-                    x2[..., j, :, :],
+                    torch.einsum(
+                        "bplf, pa -> balf", x1, self.parity_masks[x1_mask_idx]
+                    ),
+                    torch.einsum(
+                        "bplf, pa -> balf", x2, self.parity_masks[x2_mask_idx]
+                    ),
                     self.cg,
                 )
 
-            if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
-                self.output[:, 0, :, :] = self.output[:, 0, :, :] + _couple_slices(
-                    0, 0
-                )  # even + even -> even
-            if (self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
-                self.output[:, 1, :, :] = self.output[:, 1, :, :] + _couple_slices(
-                    1, 0
-                )  # odd + even -> odd
-            if (self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
-                self.output[:, 0, :, :] = self.output[:, 0, :, :] + _couple_slices(
-                    1, 1
-                )  # odd + odd -> even
-            if (not self.pseudo_tensor_in1) and (self.pseudo_tensor_in2):
-                self.output[:, 1, :, :] = self.output[:, 1, :, :] + _couple_slices(
-                    0, 1
-                )  # even + odd -> odd
+            eee = _couple_slices("even", "odd")  # even + even -> even
+            ooe = _couple_slices("odd", "even")  # odd + odd -> even
+            eoo = _couple_slices("even", "odd")  # even + odd -> odd
+            oeo = _couple_slices("odd", "odd")  # odd + even -> odd
 
-        return self.output
+        # Combine same parities and return stacked features.
+        return torch.stack((eee + ooe, eoo + oeo), axis=-3)

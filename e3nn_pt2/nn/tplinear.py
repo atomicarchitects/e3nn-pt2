@@ -6,7 +6,6 @@ from typing import Optional
 
 
 class TensorProductLinear(torch.nn.Module):
-
     def __init__(
         self,
         irreps_in1: so3.Irreps,
@@ -14,7 +13,6 @@ class TensorProductLinear(torch.nn.Module):
         batch: int = 1,
         use_bias: Optional[int] = False,
     ):
-
         super().__init__()
         self.tp = nn.TensorProduct(irreps_in1, irreps_in2, batch)
         # Assuming that the first input has the channels
@@ -22,7 +20,6 @@ class TensorProductLinear(torch.nn.Module):
 
     @torch.compile(mode="max-autotune", fullgraph=True)
     def forward(self, x_irreps, y_irreps):
-        with torch.no_grad():
-            output = self.tp(x_irreps, y_irreps)
-            output = self.linear(output)
-            return output
+        output = self.tp(x_irreps, y_irreps)
+        output = self.linear(output)
+        return output

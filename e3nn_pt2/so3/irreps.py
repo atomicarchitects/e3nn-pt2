@@ -9,7 +9,6 @@ from .common import _so3_clebsch_gordan
 
 
 class Irreps(o3.Irreps):
-
     # Just a couple of extra utilites over e3nn.Irreps
     @property
     def mul_dim(self):
