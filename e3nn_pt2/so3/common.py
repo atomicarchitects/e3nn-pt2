@@ -121,9 +121,9 @@ def _su2_clebsch_gordan(
         for m1 in (x / 2 for x in range(-int(2 * j1), int(2 * j1) + 1, 2)):
             for m2 in (x / 2 for x in range(-int(2 * j2), int(2 * j2) + 1, 2)):
                 if abs(m1 + m2) <= j3:
-                    mat[
-                        int(j1 + m1), int(j2 + m2), int(j3 + m1 + m2)
-                    ] = _su2_clebsch_gordan_coeff((j1, m1), (j2, m2), (j3, m1 + m2))
+                    mat[int(j1 + m1), int(j2 + m2), int(j3 + m1 + m2)] = (
+                        _su2_clebsch_gordan_coeff((j1, m1), (j2, m2), (j3, m1 + m2))
+                    )
     return mat
 
 

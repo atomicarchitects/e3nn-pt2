@@ -25,7 +25,9 @@ class TensorProduct(nn.Module):
         self.parity_masks = nn.ParameterDict(
             {
                 "even": torch.Tensor([1, 0]).reshape(2, 1),
-                "odd": torch.Tensor([0, 1]).reshape(2, 1),
+                "first_dim": torch.Tensor([[1, 0], [0, 1], [1, 0], [0, 1]]),
+                "second_dim": torch.Tensor([[1, 0], [0, 1], [0, 1], [1, 0]]),
+                "concatenate": torch.Tensor([[1, 1, 0, 0], [0, 0, 1, 1]]),
             }
         )
 
@@ -46,30 +48,20 @@ class TensorProduct(nn.Module):
     def forward(self, x1, x2):
         if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
             return torch.einsum(
-                f"...lf, ...m{self.channel_dim}, lmn -> ...nf",
-                torch.einsum("bplf, pa -> balf", x1, self.parity_masks["even"]),
-                torch.einsum("bplf, pa -> balf", x2, self.parity_masks["even"]),
+                f"bplf, bpm{self.channel_dim}, ap, lmn -> banf",
+                x1,
+                x2,
+                self.parity_masks["even"],
                 self.cg,
             )
 
         else:
-
-            def _couple_slices(x1_mask_idx: int, x2_mask_idx: int):
-                return torch.einsum(
-                    f"...lf, ...m{self.channel_dim}, lmn -> ...nf",
-                    torch.einsum(
-                        "bplf, pa -> balf", x1, self.parity_masks[x1_mask_idx]
-                    ),
-                    torch.einsum(
-                        "bplf, pa -> balf", x2, self.parity_masks[x2_mask_idx]
-                    ),
-                    self.cg,
-                )
-
-            eee = _couple_slices("even", "odd")  # even + even -> even
-            ooe = _couple_slices("odd", "even")  # odd + odd -> even
-            eoo = _couple_slices("even", "odd")  # even + odd -> odd
-            oeo = _couple_slices("odd", "odd")  # odd + even -> odd
-
-        # Combine same parities and return stacked features.
-        return torch.stack((eee + ooe, eoo + oeo), axis=-3)
+            return torch.einsum(
+                f"bplf, ap, bql{self.channel_dim}, aq, lmn, za -> bznf",
+                x1,
+                self.parity_masks["first_dim"],
+                x2,
+                self.parity_masks["second_dim"],
+                self.cg,
+                self.parity_masks["concatenate"],
+            )
