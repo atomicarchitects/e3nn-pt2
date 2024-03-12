@@ -2,8 +2,9 @@ r"""Functions related to irreducible representations of rotations."""
 
 from typing import Optional, Tuple
 
-import torch
-from e3nn import io, o3
+from tinygrad import Tensor, dtypes, dtype, Device
+from e3nn import o3
+import numpy as np
 
 from .common import _so3_clebsch_gordan
 
@@ -23,7 +24,8 @@ class Irreps(o3.Irreps):
 
     def randn(
         self,
-        leading_shape: Optional[Tuple[int, ...]] = (1,),
+        batch: Optional[Tuple[int, ...]] = 1,
+        dtype: Optional[dtype.DType] = dtypes.default_float,
     ):
         r"""Random tensor
 
@@ -38,23 +40,23 @@ class Irreps(o3.Irreps):
 
         """
         parity_dim_mapper = {-1: 2, 1: 1}
-        padded_irreps_tensor = torch.zeros(
-            leading_shape + (self.parity_dim, (self.lmax + 1) ** 2, self.mul_dim)
+        padded_irreps_tensor = np.zeros(
+            (batch,) + (self.parity_dim, (self.lmax + 1) ** 2, self.mul_dim)
         )
         for _, irrep in self:
             parity_shape = parity_dim_mapper[irrep.p]
             padded_irreps_tensor[
                 :, parity_shape - 1 : parity_shape, irrep.l**2 : (irrep.l + 1) ** 2, :
-            ] = torch.randn(leading_shape + (1, 2 * irrep.l + 1, self.mul_dim))
+            ] = np.random.randn(batch, 1, 2 * irrep.l + 1, self.mul_dim)
 
-        return padded_irreps_tensor
+        return Tensor(padded_irreps_tensor, requires_grad=False, dtype=dtype, device=Device.DEFAULT)
 
 
 def clebsch_gordan(
     max_degree1: int,
     max_degree2: int,
     max_degree3: int,
-    dtype: Optional[torch.dtype] = torch.float32,
+    dtype: Optional[dtype.DType] = dtypes.float32,
 ):
     r"""Clebsch-Gordan coefficients for coupling all degrees at once.
 
@@ -76,6 +78,6 @@ def clebsch_gordan(
             _l3_common = []
             for _l3 in range(max_degree3 + 1):
                 _l3_common.append(_so3_clebsch_gordan(_l1, _l2, _l3))
-            _l2_common.append(torch.cat(_l3_common, axis=2))
-        _l1_common.append(torch.cat(_l2_common, axis=1))
-    return torch.cat(_l1_common, axis=0).to(dtype)
+            _l2_common.append(np.concatenate(_l3_common, axis=2))
+        _l1_common.append(np.concatenate(_l2_common, axis=1))
+    return Tensor(np.concatenate(_l1_common, axis=0), dtype=dtype, device=Device.DEFAULT)

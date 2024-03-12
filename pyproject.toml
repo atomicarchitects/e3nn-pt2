@@ -1,10 +1,10 @@
 [project]
-name = "e3nn-pt2"
-description = "Your friendly neighborhood e3nn powered by a e3x memory backend with first class support for PyTorch 2.0"
+name = "tinye3nn"
+description = "Combines e3nn-jax's performance with e3nn-torch's flexibility through the power of tinygrad"
 readme = "README.md"
 requires-python = ">=3.9"
 license = {file = "LICENSE"}
-authors = [{name = "The e3nn-pt2 Authors", email="mitkotak0305@gmail.com"}]
+authors = [{name = "The tinygrad Authors", email="mitkotak0305@gmail.com"}]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -26,8 +26,7 @@ keywords = [
 
 dependencies = [
   "e3nn",
-  "torch",
-  "jaxtyping"
+  "tinygrad",
 ]
 
 
