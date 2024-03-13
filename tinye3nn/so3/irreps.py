@@ -49,7 +49,12 @@ class Irreps(o3.Irreps):
                 :, parity_shape - 1 : parity_shape, irrep.l**2 : (irrep.l + 1) ** 2, :
             ] = np.random.randn(batch, 1, 2 * irrep.l + 1, self.mul_dim)
 
-        return Tensor(padded_irreps_tensor, requires_grad=False, dtype=dtype, device=Device.DEFAULT)
+        return Tensor(
+            padded_irreps_tensor,
+            requires_grad=False,
+            dtype=dtype,
+            device=Device.DEFAULT,
+        )
 
 
 def clebsch_gordan(
@@ -80,4 +85,6 @@ def clebsch_gordan(
                 _l3_common.append(_so3_clebsch_gordan(_l1, _l2, _l3))
             _l2_common.append(np.concatenate(_l3_common, axis=2))
         _l1_common.append(np.concatenate(_l2_common, axis=1))
-    return Tensor(np.concatenate(_l1_common, axis=0), dtype=dtype, device=Device.DEFAULT)
+    return Tensor(
+        np.concatenate(_l1_common, axis=0), dtype=dtype, device=Device.DEFAULT
+    )

@@ -5,6 +5,7 @@ import functools
 
 """Copied directly from e3nn-jax to avoid imports"""
 
+
 def _su2_cg(idx1, idx2, idx3):
     """Calculates the Clebsch-Gordon coefficient.
 
@@ -54,6 +55,7 @@ def _su2_clebsch_gordan(
 ) -> np.ndarray:
     """Calculates the Clebsch-Gordon matrix."""
     import math
+
     assert isinstance(j1, (int, float))
     assert isinstance(j2, (int, float))
     assert isinstance(j3, (int, float))

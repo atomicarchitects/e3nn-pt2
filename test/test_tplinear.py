@@ -1,6 +1,7 @@
 import unittest
 import e3nn_pt2
 
+
 class TestTensorProduct(unittest.TestCase):
     def test_tplinear_fwd_e3(self):
         x_irreps = e3nn_pt2.so3.Irreps("32x0e + 32x1e + 32x2e")
@@ -10,5 +11,6 @@ class TestTensorProduct(unittest.TestCase):
         mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps)
         out = mod(x, y)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

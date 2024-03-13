@@ -1,9 +1,11 @@
 from e3nn import o3
-from e3nn_pt2 import so3
+from tinye3nn import so3
 
 from typing import Tuple, List, Any, Sequence, Union, Optional
 from tinygrad import Tensor, nn
+
 # Linear layer
+
 
 class Linear:
     r"""A linear transformation applied over the last dimension of the input.
@@ -44,27 +46,41 @@ class Linear:
     ):
         self.pseudo_tensor = (irreps_in.parity_dim == 2) or (irreps_out.parity_dim == 2)
         self.lmax = irreps_in.lmax
-        self.output_mul = irreps_out.mul_dim
-        self.ells = [irrep.l for _, irrep in irreps_in]
-        for lmax in self.ells:
+        self.ells = []
+        for _, irrep in irreps_in:
+            lmax = irrep.l
             if self.pseudo_tensor:  # Has pseudotensors.
-                setattr(self, f"dense_e_{lmax}",
-                    nn.Linear(in_features=irreps_in.mul_dim,
-                              out_features=irreps_out.mul_dim,
-                              bias=use_bias))
-                setattr(self, f"dense_o_{lmax}",
-                    nn.Linear(in_features=irreps_in.mul_dim,
-                              out_features=irreps_out.mul_dim,
-                              bias=False))
+                setattr(
+                    self,
+                    f"dense_e_{lmax}",
+                    nn.Linear(
+                        in_features=irreps_in.mul_dim,
+                        out_features=irreps_out.mul_dim,
+                        bias=use_bias and lmax == 0,
+                    ),
+                )
+                setattr(
+                    self,
+                    f"dense_o_{lmax}",
+                    nn.Linear(
+                        in_features=irreps_in.mul_dim,
+                        out_features=irreps_out.mul_dim,
+                        bias=False and lmax == 0,
+                    ),
+                )
 
             else:
-                setattr(self, f"dense_{lmax}",
-                    nn.Linear(in_features=irreps_in.mul_dim,
-                              out_features=irreps_out.mul_dim,
-                              bias=use_bias))
-    def __call__(
-        self,
-        inputs):
+                setattr(
+                    self,
+                    f"dense_{irrep.l}",
+                    nn.Linear(
+                        in_features=irreps_in.mul_dim,
+                        out_features=irreps_out.mul_dim,
+                        bias=use_bias and lmax == 0,
+                    ),
+                )
+
+    def __call__(self, inputs):
         """Applies a linear transformation to the inputs along the last dimension.
 
         Args:
@@ -80,14 +96,8 @@ class Linear:
                     # Even parity (tensors).
                     Tensor.cat(
                         *[
-                            (
-                                getattr(self, f"dense_e_{lmax}")(
-                                    inputs[..., 0, lmax**2 : (lmax + 1) ** 2, :]
-                                )
-                                if lmax in self.ells
-                                else inputs[..., 0, lmax**2 : (l + 1) ** 2, :].expand(
-                                    inputs.shape[:-1] + (self.output_mul,)
-                                )
+                            getattr(self, f"dense_e_{lmax}")(
+                                inputs[..., 0, lmax**2 : (lmax + 1) ** 2, :]
                             )
                             for lmax in range(self.lmax + 1)
                         ],
@@ -96,14 +106,8 @@ class Linear:
                     # Odd parity (pseudotensors).
                     Tensor.cat(
                         *[
-                            (
-                                getattr(self, f"dense_o_{lmax}")(
-                                    inputs[..., 1, lmax**2 : (lmax + 1) ** 2, :]
-                                )
-                                if lmax in self.ells
-                                else inputs[..., 1, lmax**2 : (lmax + 1) ** 2, :].expand(
-                                    inputs.shape[:-1] + (self.output_mul,)
-                                )
+                            getattr(self, f"dense_o_{lmax}")(
+                                inputs[..., 1, lmax**2 : (lmax + 1) ** 2, :]
                             )
                             for lmax in range(self.lmax + 1)
                         ],
@@ -115,12 +119,8 @@ class Linear:
         else:  # Has no pseudotensors.
             return Tensor.cat(
                 *[
-                    (
-                        getattr(self, f"dense_{lmax}")(inputs[..., lmax**2 : (lmax + 1) ** 2, :])
-                        if lmax in self.ells
-                        else inputs[..., lmax**2 : (lmax + 1) ** 2, :].expand(
-                            inputs.shape[:-1] + (self.output_mul,)
-                        )
+                    getattr(self, f"dense_{lmax}")(
+                        inputs[..., lmax**2 : (lmax + 1) ** 2, :]
                     )
                     for lmax in range(self.lmax + 1)
                 ],

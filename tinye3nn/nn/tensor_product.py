@@ -2,23 +2,29 @@ import numpy as np
 from tinygrad import Tensor, Device, dtypes
 
 from e3nn import o3
-from e3nn_pt2 import so3
+from tinye3nn import so3
 
 from typing import Tuple, List, Any, Sequence, Union, Optional
 
+
 class TensorProduct:
     def __init__(self, irreps_in1, irreps_in2, batch=1):
-        self.irreps_out = so3.Irreps(
-            o3.FullTensorProduct(irreps_in1, irreps_in2).irreps_out.__str__()
+        self.cg = so3.clebsch_gordan(
+            irreps_in1.lmax, irreps_in2.lmax, irreps_in1.lmax + irreps_in2.lmax
         )
-        self.cg = so3.clebsch_gordan(irreps_in1.lmax, irreps_in2.lmax, self.irreps_out.lmax)
         self.pseudo_tensor_in1 = irreps_in1.parity_dim == 2
         self.pseudo_tensor_in2 = irreps_in2.parity_dim == 2
         self.even = Tensor([1, 0]).reshape(2, 1)
-        self.first_dim = Tensor([[1, 0], [0, 1], [1, 0], [0, 1]], requires_grad=True, device=Device.DEFAULT)
-        self.second_dim = Tensor([[1, 1, 0, 0], [0, 0, 1, 1]], requires_grad=True, device=Device.DEFAULT)
-        self.concatenate = Tensor([[1, 1, 0, 0], [0, 0, 1, 1]], requires_grad=True, device=Device.DEFAULT)
- 
+        self.first_dim = Tensor(
+            [[1, 0], [0, 1], [1, 0], [0, 1]], requires_grad=True, device=Device.DEFAULT
+        )
+        self.second_dim = Tensor(
+            [[1, 1, 0, 0], [0, 0, 1, 1]], requires_grad=True, device=Device.DEFAULT
+        )
+        self.concatenate = Tensor(
+            [[1, 1, 0, 0], [0, 0, 1, 1]], requires_grad=True, device=Device.DEFAULT
+        )
+
         # TODO: Add named tensors
         # TODO Simplify this logic
 
