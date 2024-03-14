@@ -1,11 +1,11 @@
-# e3nn-pt2
+# tinye3nn
 
 > [!CAUTION]
 > API is experimental and likely to break
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
-Your friendly neighborhood [e3nn](https://github.com/e3nn/e3nn/) powered by a [e3x](https://github.com/google-research/e3x/) memory backend with first class support for [PyTorch 2.0](https://pytorch.org/get-started/pytorch-2.0/)
+Marrying [e3nn-torch's](https://github.com/e3nn/e3nn/) flexibilty with [e3nn-jax's](https://github.com/e3nn/e3nn-jax/) performance. Wedding has been blessed by [tinygrad](https://github.com/tinygrad/tinygrad) and [e3x](https://github.com/google-research/e3x/) :wedding:.
 
 ## Installation
 ```console
@@ -16,21 +16,21 @@ Your friendly neighborhood [e3nn](https://github.com/e3nn/e3nn/) powered by a [e
 (credit Mario Geiger for the heading)
 
 ```python
-import e3nn_pt2
+import tinye3nn
 
 # Create Irreps as per e3nn convention (currently not supporting other input formats except strings)
 
-x_irreps = e3nn_pt2.so3.Irreps("32x0e + 32x1e + 32x2e")
-y_irreps = e3nn_pt2.so3.Irreps("0e + 1o + 2e")
+x_irreps = tinye3nn.so3.Irreps("32x0e + 32x1o + 32x2e")
+y_irreps = tinye3nn.so3.Irreps("0e + 1o + 2e")
 
 
 # Initialize arrays and move them to the GPU
 
-x = x_irreps.randn().to(device='cuda')
-y = y_irreps.randn().to(device='cuda')
+x = x_irreps.randn()
+y = y_irreps.randn()
 
 # Initialize TP + Linear module with the option to specify the device
-mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps).to(device='cuda')
+mod = tinye3nn.nn.TensorProductLinear(x_irreps, y_irreps)
 
 # Run the model :)
 
@@ -53,3 +53,4 @@ out = mod(x, y)
 - e3nn
 - e3nn-jax
 - e3x
+- tinygrad

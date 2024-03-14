@@ -19,7 +19,7 @@ class TensorProduct:
             [[1, 0], [0, 1], [1, 0], [0, 1]], requires_grad=True, device=Device.DEFAULT
         )
         self.second_dim = Tensor(
-            [[1, 1, 0, 0], [0, 0, 1, 1]], requires_grad=True, device=Device.DEFAULT
+            [[1, 0], [0, 1], [0, 1], [1, 0]], requires_grad=True, device=Device.DEFAULT
         )
         self.concatenate = Tensor(
             [[1, 1, 0, 0], [0, 0, 1, 1]], requires_grad=True, device=Device.DEFAULT
