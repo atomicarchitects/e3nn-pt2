@@ -5,7 +5,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
-Marrying [e3nn-torch's](https://github.com/e3nn/e3nn/) flexibilty with [e3nn-jax's](https://github.com/e3nn/e3nn-jax/) performance. Wedding has been blessed by [tinygrad](https://github.com/tinygrad/tinygrad) and [e3x](https://github.com/google-research/e3x/) :wedding:.
+Marrying [e3nn-torch's](https://github.com/e3nn/e3nn/) flexibilty with [e3nn-jax's](https://github.com/e3nn/e3nn-jax/) performance. Blessed by [tinygrad](https://github.com/tinygrad/tinygrad) and [e3x](https://github.com/google-research/e3x/) :wedding:.
 
 ## Installation
 ```console
