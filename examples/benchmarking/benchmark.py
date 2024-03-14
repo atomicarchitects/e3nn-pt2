@@ -36,15 +36,9 @@ if arg_parser.mode == "torch":
     from e3nn import io, o3, util
     import e3nn_pt2
     import functools
+    torch.backends.cuda.matmul.allow_tf32 = True
 
     def TPLinear_E3NNPT2(tp_e3nnpt2, x, y):
-        # def loss_function(params, inputs):
-        #     return torch.sum(torch.tanh(
-        #                 torch.func.functional_call(
-        #                     mod,
-        #                     dict(mod.named_parameters()),
-        #                     (x, y,))))
-        # return torch.func.grad_and_value(loss_function, argnums=0)(x, y)
         out = tp_e3nnpt2(x, y)
         return out, out.tanh().sum().backward()
 
@@ -308,8 +302,7 @@ if arg_parser.plot:
         plt.xlabel("lmax")
         plt.ylabel("Time (s)")
         plt.yscale("log")
-        plt.title(
-            f"RTX A5500 FWD + BWD TP({arg_parser.features}x0e + {arg_parser.features}x1e ... \otimes 1x0e + 1x1e...)\n + Linear({arg_parser.features}x0e + {arg_parser.features}x1e ...)"
-        )
+        parity = "e" if arg_parser.all_even else "o"
+        plt.title(f"A100 TP({arg_parser.features}x0e + {arg_parser.features}x1{parity} ... \otimes 1x0e + 1x1{parity}...)\n + Linear({arg_parser.features}x0e + {arg_parser.features}x1{parity} ...)")
         all_even = "_all_even" if arg_parser.all_even else ""
         plt.savefig(f"benchmark_tplinear_batch_{arg_parser.batch}{all_even}.png")

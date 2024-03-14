@@ -36,6 +36,8 @@ out = mod(x, y)
 
 ## Runtime comparision with other packages in the e3nn-verse
 
+- Comparing SE(3) (top) and E(3) (bottom) tensor product decomposition + linear
+
 <div class="container">
       <div class="image">
       <img src="examples/benchmarking/benchmark_tplinear_batch_100_all_even.png"  style="width:100%"/>
