@@ -88,3 +88,4 @@ def clebsch_gordan(
     return Tensor(
         np.concatenate(_l1_common, axis=0), dtype=dtype, device=Device.DEFAULT
     )
+  

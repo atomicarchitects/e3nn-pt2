@@ -3,7 +3,9 @@ import numpy as np
 from typing import Optional, Tuple, Union
 import functools
 
-"""Copied directly from e3nn-jax to avoid imports"""
+from tinygrad import Tensor
+
+"""Copied directly from e3nn-jax to avoid JAX imports"""
 
 
 def _su2_cg(idx1, idx2, idx3):
