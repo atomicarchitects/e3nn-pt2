@@ -10,7 +10,7 @@ Your friendly neighborhood [e3nn](https://github.com/e3nn/e3nn/) powered by a [e
 ```
 
 ## Amuze Bouche
-(credit Mario Geiger for the heading)
+(credit @mariogeiger for the heading)
 
 ```python
 import e3nn_pt2
