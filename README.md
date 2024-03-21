@@ -34,18 +34,19 @@ mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps).to(device='cuda')
 out = mod(x, y)
 ```
 
-## Runtime comparision with other packages in the e3nn-verse
+## Tensor Product + Linear runtime comparision with other packages in the e3nn-verse
 
-- Comparing SE(3) (top) and E(3) (bottom) tensor product decomposition + linear
+```python
+roofline_time = max(
+      model_flops/PEAK_FLOPS_s,
+      model_bytes/PEAK_BYTES_s
+      )
+```
 
-<div class="container">
-      <div class="image">
-      <img src="examples/benchmarking/benchmark_tplinear_batch_100_all_even.png"  style="width:100%"/>
-      </div> 
-      <div class="image">
-       <img src="examples/benchmarking/benchmark_tplinear_batch_100.png"  style="width:100%"/>
-      </div> 
-</div>
+| GPU  | SE(3) | E(3) |
+| -----| ------| -----|
+| RTXA5500 | ![tplinear_se3](examples/benchmarking/benchmark_tplinear_batch_100_all_even_rtx.png) | ![tplinear_e3](examples/benchmarking/benchmark_tplinear_batch_100_rtx.png) |
+| A100 | ![tplinear_se3](examples/benchmarking/benchmark_tplinear_batch_100_all_even_a100.png) | ![tplinear_e3](examples/benchmarking/benchmark_tplinear_batch_100_a100.png) |
 
 ## Acknowledgement
 
