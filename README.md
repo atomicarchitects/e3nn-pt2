@@ -16,13 +16,11 @@
 import e3nn_pt2
 
 # Create Irreps as per e3nn convention (currently not supporting other input formats except strings)
-
 x_irreps = e3nn_pt2.so3.Irreps("32x0e + 32x1e + 32x2e")
 y_irreps = e3nn_pt2.so3.Irreps("0e + 1o + 2e")
 
 
 # Initialize arrays and move them to the GPU
-
 x = x_irreps.randn().to(device='cuda')
 y = y_irreps.randn().to(device='cuda')
 
@@ -30,11 +28,14 @@ y = y_irreps.randn().to(device='cuda')
 mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps).to(device='cuda')
 
 # Run the model :)
-
 out = mod(x, y)
 ```
 
-## Tensor Product + Linear runtime comparision with other packages in the e3nn-verse
+## Depth-wise Tensor Product -> Linear layer Forward + Backward Runtime
+
+- [e3nn](https://github.com/e3nn/e3nn/)
+- [e3nn-jax](https://github.com/e3nn/e3nn/)
+- [e3x](https://github.com/google-research/e3x/)
 
 ```python
 roofline_time = max(
