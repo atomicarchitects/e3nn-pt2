@@ -31,7 +31,7 @@ mod = e3nn_pt2.nn.TensorProductLinear(x_irreps, y_irreps).to(device='cuda')
 out = mod(x, y)
 ```
 
-## Depth-wise Tensor Product -> Linear layer Forward + Backward Runtime
+## Depth-wise Tensor Product -> Linear layer Forward + Backward Runtime Comparison
 
 - [e3nn](https://github.com/e3nn/e3nn/)
 - [e3nn-jax](https://github.com/e3nn/e3nn/)
