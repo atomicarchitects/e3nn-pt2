@@ -9,7 +9,7 @@
 > python -m pip install .
 ```
 
-## Amuze Bouche
+## Amuze-Bouche
 (credit [@mariogeiger](https://github.com/mariogeiger) or the heading)
 
 ```python
