@@ -107,3 +107,19 @@ def change_basis_real_to_complex(l: int) -> np.ndarray:
     return (
         -1j
     ) ** l * q  # Added factor of 1j**l to make the Clebsch-Gordan coefficients real
+
+def integer_powers(x, max_degree: int):
+    """Calculates all integer powers up to max_degree of x along axis -2."""
+    # TODO: cumprod = exp(cumsum(log)) has low precision
+    return Tensor.exp(
+            Tensor.cumsum(
+             Tensor.log(
+                Tensor.cat(
+                        Tensor.ones_like(x),
+                        Tensor.repeat(x, [max_degree if i == (len(x.shape) - 2)
+                                                    else 1 for i in range(len(x.shape))]),
+                        dim=-2,
+                        ),
+                    ), axis=-2
+                )
+            )
