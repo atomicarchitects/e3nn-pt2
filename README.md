@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
 
-[e3nn](https://github.com/e3nn/e3nn/) built for [PyTorch 2.0](https://pytorch.org/get-started/pytorch-2.0/) with [e3x](https://github.com/google-research/e3x/) memory backend.
+[e3nn](https://github.com/e3nn/e3nn/) + [PyTorch 2.0](https://pytorch.org/get-started/pytorch-2.0/)
 
 ## Installation
 ```console
