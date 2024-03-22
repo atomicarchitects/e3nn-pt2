@@ -10,7 +10,6 @@
 ```
 
 ## Amuze-Bouche
-(credit [@mariogeiger](https://github.com/mariogeiger) or the heading)
 
 ```python
 import e3nn_pt2
