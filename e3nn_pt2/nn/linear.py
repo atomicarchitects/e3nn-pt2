@@ -86,7 +86,6 @@ class Linear(nn.Module):
                 self.ells, irreps_in.mul_dim, irreps_out.mul_dim, use_bias
             )
 
-    @torch.compile
     def forward(
         self,
         inputs: Union[

@@ -14,9 +14,13 @@ arg_parser = parser.parse_args()
 
 if arg_parser.mode == "torch":
     import torch
-    from e3nn import io, o3
+    from e3nn import io, o3, util
     import e3nn_pt2
     
+    torch._inductor.config.coordinate_descent_tuning = True
+    torch._inductor.config.triton.unique_kernel_names = True
+    torch._inductor.config.fx_graph_cache = True # Experimental feature to reduce compilation times, will be on by default in future
+
     def TPLinear_E3NNPT2(x, y):
         result = tp2(x, y)
         loss = result.sum()
@@ -149,8 +153,11 @@ for lmax in range(1, arg_parser.lmax+1):
 
         print("Initializing TP + Linear layers on device")
         
+        global tp2 
         tp2 = e3nn_pt2.nn.TensorProductLinear(irreps_in1_pt2, irreps_in2_pt2, batch=arg_parser.batch).to(device='cuda')
+        tp2 = torch.compile(tp2, mode="reduce-overhead", fullgraph=True)
         tp = o3.FullyConnectedTensorProduct(irreps_in1, irreps_in2, irreps_in1).to(device='cuda')
+        tp = util.jit.compile(tp)
 
         print("Done")
         

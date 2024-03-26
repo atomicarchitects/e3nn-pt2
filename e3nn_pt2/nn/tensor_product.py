@@ -10,7 +10,6 @@ import jaxtyping
 
 torch.set_float32_matmul_precision("high")
 
-
 class TensorProduct(nn.Module):
     def __init__(self, irreps_in1, irreps_in2, batch=1):
         super().__init__()
@@ -44,7 +43,6 @@ class TensorProduct(nn.Module):
         else:
             self.channel_dim = "g"  # f x g -> f
 
-    @torch.compile
     def forward(self, x1, x2):
         if (not self.pseudo_tensor_in1) and (not self.pseudo_tensor_in2):
             return torch.einsum(
