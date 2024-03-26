@@ -21,13 +21,13 @@ if arg_parser.mode == "torch":
     torch._inductor.config.triton.unique_kernel_names = True
     torch._inductor.config.fx_graph_cache = True # Experimental feature to reduce compilation times, will be on by default in future
 
-    def TPLinear_E3NNPT2(x, y):
+    def TP_E3NNPT2(x, y):
         result = tp2(x, y)
         loss = result.sum()
         loss.backward()
         return result, loss
     
-    def TPLinear_E3NN(x, y):
+    def TP_E3NN(x, y):
         result = tp(x, y)
         loss = result.sum()
         loss.backward()
@@ -47,40 +47,39 @@ if arg_parser.mode == "jax":
     
     import functools
     
-    class TPLineare3x(nn.Module):
+    class TPe3x(nn.Module):
         
         max_degree: int
         features: int
 
         @nn.compact
         def __call__(self, x_irreps, y_irreps):
-            return e3x.nn.Dense(features=self.features)(
-                e3x.nn.Tensor(max_degree=self.max_degree, include_pseudotensors=True)(x_irreps, y_irreps))
+            return e3x.nn.Tensor(max_degree=self.max_degree, include_pseudotensors=True)(x_irreps, y_irreps)
         
     @jax.jit
-    def TPLinear_E3X(kernel, x, y):
+    def TP_E3X(kernel, x, y):
         def loss_function(kernel, x, y):
-            return tplinear_e3x.apply(kernel, x, y).sum()
+            return tp_e3x.apply(kernel, x, y).sum()
     
         loss, grad = jax.value_and_grad(loss_function)(kernel, x, y)    
         return loss
 
     
-    class TPLineare3nn(nn.Module):
+    class TPe3nn(nn.Module):
         
         irreps_out: e3nn_jax.Irreps
 
         @nn.compact
         def __call__(self, x_irreps_e3nn, y_irreps_e3nn):
-            return e3nn_jax.flax.Linear(self.irreps_out)(e3nn_jax.tensor_product(x_irreps_e3nn, y_irreps_e3nn))
+            return e3nn_jax.tensor_product(x_irreps_e3nn, y_irreps_e3nn)
     
 
     @jax.jit
-    def TPLinear_E3NNJAX(kernel, x_irreps_e3nn, y_irreps_e3nn):
+    def TP_E3NNJAX(kernel, x_irreps_e3nn, y_irreps_e3nn):
         def loss_function(kernel, x, y):
             return sum(
                 jnp.sum(out)
-                for out in jax.tree_util.tree_leaves(tplinear_e3nn.apply(kernel, x, y))
+                for out in jax.tree_util.tree_leaves(tp_e3nn.apply(kernel, x, y))
             )
                     
         loss, grad = jax.value_and_grad(loss_function)(kernel, x_irreps_e3nn, y_irreps_e3nn)    
@@ -151,35 +150,35 @@ for lmax in range(1, arg_parser.lmax+1):
         x_e3nn, y_e3nn = sample_e3nn(irreps_in1, irreps_in2)
         print("Done !")
 
-        print("Initializing TP + Linear layers on device")
+        print("Initializing TP layers on device")
         
         global tp2 
-        tp2 = e3nn_pt2.nn.TensorProductLinear(irreps_in1_pt2, irreps_in2_pt2, batch=arg_parser.batch).to(device='cuda')
+        tp2 = e3nn_pt2.nn.TensorProduct(irreps_in1_pt2, irreps_in2_pt2, batch=arg_parser.batch).to(device='cuda')
         tp2 = torch.compile(tp2, mode="reduce-overhead", fullgraph=True)
-        tp = o3.FullyConnectedTensorProduct(irreps_in1, irreps_in2, irreps_in1).to(device='cuda')
+        tp = o3.FullTensorProduct(irreps_in1, irreps_in2).to(device='cuda')
         tp = util.jit.compile(tp)
 
         print("Done")
         
-        e3x_torch_times.append(run(TPLinear_E3NNPT2, sample_e3nn_pt2, irreps_in1_pt2, irreps_in2_pt2, mode=arg_parser.mode)/arg_parser.runs)
-        e3nn_torch_times.append(run(TPLinear_E3NN, sample_e3nn, irreps_in1, irreps_in2, mode=arg_parser.mode)/arg_parser.runs)
+        e3x_torch_times.append(run(TP_E3NNPT2, sample_e3nn_pt2, irreps_in1_pt2, irreps_in2_pt2, mode=arg_parser.mode)/arg_parser.runs)
+        e3nn_torch_times.append(run(TP_E3NN, sample_e3nn, irreps_in1, irreps_in2, mode=arg_parser.mode)/arg_parser.runs)
 
     if arg_parser.mode == "jax":
             
         rng = jax.random.PRNGKey(0)
-        tplinear_e3x = TPLineare3x(features=arg_parser.features, max_degree=lmax)
+        tp_e3x = TPe3x(features=arg_parser.features, max_degree=lmax)
         
         def sample_e3x(lmax):
             rng = jax.random.PRNGKey(0)
             key1, key2 = jax.random.split(rng, 2)
             x = jax.random.normal(key1, (arg_parser.batch, 1 if arg_parser.all_even else 2, (lmax+1)**2, arg_parser.features))
             y = jax.random.normal(key2, (arg_parser.batch, 1 if arg_parser.all_even else 2, (lmax+1)**2, arg_parser.features))
-            params = tplinear_e3x.init(rng, x, y)
+            params = tp_e3x.init(rng, x, y)
             return params, x, y
 
         params, x_jax, y_jax = sample_e3x(lmax)
 
-        nflops = nn.summary._get_flops(TPLinear_E3X, params, x_jax, y_jax)
+        nflops = nn.summary._get_flops(TP_E3X, params, x_jax, y_jax)
         _,weights_bytes = nn.summary._size_and_bytes(params)
         input_bytes = x_jax.nbytes + y_jax.nbytes
         output_bytes = 4*(arg_parser.batch*arg_parser.features*2*(lmax+1)**2)
@@ -194,7 +193,7 @@ for lmax in range(1, arg_parser.lmax+1):
                     )
         print("e3x Peak GFLOPS/s: ", nflops*1e-9/e3x_roofline_time)
         roofline_times.append(e3x_roofline_time)
-        e3x_time = run(TPLinear_E3X, sample_e3x, lmax, mode=arg_parser.mode)/arg_parser.runs
+        e3x_time = run(TP_E3X, sample_e3x, lmax, mode=arg_parser.mode)/arg_parser.runs
         print("e3x GFLOPS/s: ", nflops*1e-9/e3x_time)
         e3x_times.append(e3x_time)
 
@@ -204,18 +203,18 @@ for lmax in range(1, arg_parser.lmax+1):
         irreps_in2 = e3nn_jax.Irreps([(1, (l, (-1)**(0 if arg_parser.all_even else l))) for l in range(lmax + 1)])
         print(irreps_in2)
 
-        tplinear_e3nn = TPLineare3nn(irreps_out=irreps_in1)
+        tp_e3nn = TPe3nn(irreps_out=irreps_in1)
 
         def sample_e3nn_jax(irreps_in1, irreps_in2):
             rng = jax.random.PRNGKey(0)
             key1, key2 = jax.random.split(rng, 2)
             x = e3nn_jax.normal(irreps_in1, key1, (arg_parser.batch,))
             y = e3nn_jax.normal(irreps_in2, key2, (arg_parser.batch,))
-            params = tplinear_e3nn.init(rng, x, y)
+            params = tp_e3nn.init(rng, x, y)
             return params, x, y
         
         params, x_jax, y_jax = sample_e3nn_jax(irreps_in1, irreps_in2)
-        nflops = nn.summary._get_flops(TPLinear_E3NNJAX, params, x_jax, y_jax)
+        nflops = nn.summary._get_flops(TP_E3NNJAX, params, x_jax, y_jax)
         _,weights_bytes = nn.summary._size_and_bytes(params)
         input_bytes = x_jax.array.nbytes + y_jax.array.nbytes
         output_bytes = 4*(arg_parser.batch*arg_parser.features*2*(lmax+1)**2)
@@ -229,7 +228,7 @@ for lmax in range(1, arg_parser.lmax+1):
                         / PEAK_BW)
                     )
         print("e3nn-jax Peak GFLOPS/s: ", nflops*1e-9/e3nn_jax_roofline_time)
-        e3nn_jax_time = run(TPLinear_E3NNJAX, sample_e3nn_jax, irreps_in1, irreps_in2, mode=arg_parser.mode)/arg_parser.runs
+        e3nn_jax_time = run(TP_E3NNJAX, sample_e3nn_jax, irreps_in1, irreps_in2, mode=arg_parser.mode)/arg_parser.runs
         print("e3nn-jax GFLOPS/s: ", nflops*1e-9/e3nn_jax_time)
         e3nn_jax_times.append(e3nn_jax_time)
         
@@ -262,6 +261,6 @@ if arg_parser.plot:
         plt.yscale("log")
         # plt.ylim(2**-15, 2**-3)
         parity = "e" if arg_parser.all_even else "o"
-        plt.title(f"RTX A5500 FWD + BWD TP({arg_parser.features}x0e + {arg_parser.features}x1{parity} ... \otimes 1x0e + 1x1{parity}...)\n + Linear({arg_parser.features}x0e + {arg_parser.features}x1{parity} ...)")
+        plt.title(f"RTX A5500 FWD + BWD TP({arg_parser.features}x0e + {arg_parser.features}x1{parity} ... \otimes 1x0e + 1x1{parity}...)\n -> {arg_parser.features}x0e + {arg_parser.features}x1{parity} ...)")
         all_even = "_all_even" if arg_parser.all_even else ""
         plt.savefig(f"benchmark_tplinear_batch_{arg_parser.batch}{all_even}.png")

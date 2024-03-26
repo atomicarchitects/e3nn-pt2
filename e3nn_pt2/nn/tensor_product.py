@@ -13,22 +13,13 @@ torch.set_float32_matmul_precision("high")
 class TensorProduct(nn.Module):
     def __init__(self, irreps_in1, irreps_in2, batch=1):
         super().__init__()
-        self.irreps_out = so3.Irreps(
-            o3.FullTensorProduct(irreps_in1, irreps_in2).irreps_out.__str__()
-        )
-        self.cg = nn.Parameter(
-            so3.clebsch_gordan(irreps_in1.lmax, irreps_in2.lmax, self.irreps_out.lmax)
-        )
+        self.register_buffer("cg", so3.clebsch_gordan(irreps_in1.lmax, irreps_in2.lmax, irreps_in1.lmax + irreps_in2.lmax))
         self.pseudo_tensor_in1 = irreps_in1.parity_dim == 2
         self.pseudo_tensor_in2 = irreps_in2.parity_dim == 2
-        self.parity_masks = nn.ParameterDict(
-            {
-                "even": torch.Tensor([1, 0]).reshape(2, 1),
-                "first_dim": torch.Tensor([[1, 0], [0, 1], [1, 0], [0, 1]]),
-                "second_dim": torch.Tensor([[1, 0], [0, 1], [0, 1], [1, 0]]),
-                "concatenate": torch.Tensor([[1, 1, 0, 0], [0, 0, 1, 1]]),
-            }
-        )
+        self.register_buffer("even", torch.Tensor([1, 0]).reshape(2, 1))
+        self.register_buffer("first_dim", torch.Tensor([[1, 0], [0, 1], [1, 0], [0, 1]]))
+        self.register_buffer("second_dim", torch.Tensor([[1, 0], [0, 1], [0, 1], [1, 0]]))
+        self.register_buffer("concatenate", torch.Tensor([[1, 1, 0, 0], [0, 0, 1, 1]]))
 
         # TODO: Add named tensors
         # TODO Simplify this logic
@@ -49,7 +40,7 @@ class TensorProduct(nn.Module):
                 f"bplf, bpm{self.channel_dim}, ap, lmn -> banf",
                 x1,
                 x2,
-                self.parity_masks["even"],
+                self.even,
                 self.cg,
             )
 
@@ -57,9 +48,9 @@ class TensorProduct(nn.Module):
             return torch.einsum(
                 f"bplf, ap, bql{self.channel_dim}, aq, lmn, za -> bznf",
                 x1,
-                self.parity_masks["first_dim"],
+                self.first_dim,
                 x2,
-                self.parity_masks["second_dim"],
+                self.second_dim,
                 self.cg,
-                self.parity_masks["concatenate"],
+                self.concatenate,
             )
